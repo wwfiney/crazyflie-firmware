@@ -55,13 +55,8 @@
 #define MOTORS_GPIO_M4            GPIO_Pin_8 // T4_CH3
 
 /* Utils Conversion macro */
-#ifdef BRUSHLESS_MOTORCONTROLLER
-  #define C_BITS_TO_16(X) (0xFFFF * (X - MOTORS_PWM_CNT_FOR_1MS) / MOTORS_PWM_CNT_FOR_1MS)
-  #define C_16_TO_BITS(X) (MOTORS_PWM_CNT_FOR_1MS + ((X * MOTORS_PWM_CNT_FOR_1MS) / 0xFFFF))
-#else
-  #define C_BITS_TO_16(X) ((X)<<(16-MOTORS_PWM_BITS))
-  #define C_16_TO_BITS(X) ((X)>>(16-MOTORS_PWM_BITS)&((1<<MOTORS_PWM_BITS)-1))
-#endif
+//#define C_BITS_TO_16(X) ((X)<<(16-MOTORS_PWM_BITS))
+//#define C_16_TO_BITS(X) ((X)>>(16-MOTORS_PWM_BITS)&((1<<MOTORS_PWM_BITS)-1))
 
 const int MOTORS[] = { MOTOR_M1, MOTOR_M2, MOTOR_M3, MOTOR_M4 };
 static bool isInit = false;
@@ -111,7 +106,7 @@ void motorsInit()
   TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
   TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
   TIM_OCInitStructure.TIM_Pulse = 0;
-  TIM_OCInitStructure.TIM_OCPolarity = MOTORS_POLARITY;
+  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 
   TIM_OC3Init(MOTORS_GPIO_TIM_M3_4, &TIM_OCInitStructure);
   TIM_OC3PreloadConfig(MOTORS_GPIO_TIM_M3_4, TIM_OCPreload_Enable);
@@ -140,7 +135,7 @@ void motorsInit()
 
 bool motorsTest(void)
 {
-#ifndef BRUSHLESS_MOTORCONTROLLER
+#if 0
   int i;
 
   for (i = 0; i < sizeof(MOTORS) / sizeof(*MOTORS); i++)
@@ -158,35 +153,39 @@ bool motorsTest(void)
 
 void motorsSetRatio(int id, uint16_t ratio)
 {
+	//ratio is percent 0-100
+	uint16_t value = ((MOTORS_PWM_PERIOD+1) / 100) * ratio;
+
   switch(id)
   {
     case MOTOR_M1:
-      TIM_SetCompare4(MOTORS_GPIO_TIM_M1_2, C_16_TO_BITS(ratio));
+      TIM_SetCompare4(MOTORS_GPIO_TIM_M1_2, value);//C_16_TO_BITS(ratio));
       break;
     case MOTOR_M2:
-      TIM_SetCompare3(MOTORS_GPIO_TIM_M1_2, C_16_TO_BITS(ratio));
+      TIM_SetCompare3(MOTORS_GPIO_TIM_M1_2, value);//C_16_TO_BITS(ratio));
       break;
     case MOTOR_M3:
-      TIM_SetCompare4(MOTORS_GPIO_TIM_M3_4, C_16_TO_BITS(ratio));
+      TIM_SetCompare4(MOTORS_GPIO_TIM_M3_4, value);//C_16_TO_BITS(ratio));
       break;
     case MOTOR_M4:
-      TIM_SetCompare3(MOTORS_GPIO_TIM_M3_4, C_16_TO_BITS(ratio));
+      TIM_SetCompare3(MOTORS_GPIO_TIM_M3_4, value);//C_16_TO_BITS(ratio));
       break;
   }
 }
 
 int motorsGetRatio(int id)
 {
+	uint16_t ratio = (MOTORS_PWM_PERIOD+1) / 100;
   switch(id)
   {
     case MOTOR_M1:
-      return C_BITS_TO_16(TIM_GetCapture4(MOTORS_GPIO_TIM_M1_2));
+      return TIM_GetCapture4(MOTORS_GPIO_TIM_M1_2) / ratio;
     case MOTOR_M2:
-      return C_BITS_TO_16(TIM_GetCapture3(MOTORS_GPIO_TIM_M1_2));
+      return TIM_GetCapture3(MOTORS_GPIO_TIM_M1_2) / ratio;
     case MOTOR_M3:
-      return C_BITS_TO_16(TIM_GetCapture4(MOTORS_GPIO_TIM_M3_4));
+      return TIM_GetCapture4(MOTORS_GPIO_TIM_M3_4) / ratio;
     case MOTOR_M4:
-      return C_BITS_TO_16(TIM_GetCapture3(MOTORS_GPIO_TIM_M3_4));
+      return TIM_GetCapture3(MOTORS_GPIO_TIM_M3_4) / ratio;
   }
 
   return -1;
@@ -199,6 +198,7 @@ void motorsTestTask(void* params)
   int step=0;
   float rampup = 0.01;
 
+  motorsSetupMinMaxPos();
   motorsSetRatio(MOTOR_M4, 1*(1<<16) * 0.0);
   motorsSetRatio(MOTOR_M3, 1*(1<<16) * 0.0);
   motorsSetRatio(MOTOR_M2, 1*(1<<16) * 0.0);
