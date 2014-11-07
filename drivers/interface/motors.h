@@ -43,7 +43,13 @@
 //#define MOTORS_PWM_BITS     9
 #define MOTORS_PWM_PERIOD   (2500-1)// to 400Hz//((1<<MOTORS_PWM_BITS) - 1)
 #define MOTORS_PWM_PRESCALE (72-1)	//to 1M
-
+#define MOTORS_PWM_MAX	(2000)	//2ms for max power
+#define MOTORS_PWM_MIN	(1000)	//1ms for min power
+#define MOTORS_PWM_STEP	((MOTORS_PWM_MAX - MOTORS_PWM_MIN) / 100)
+#define MOTORS_PWM_RATIO2VALUE(ratio)	\
+	(MOTORS_PWM_STEP * ratio + MOTORS_PWM_MIN)
+#define MOTORS_PWM_VALUE2RATIO(value)	\
+	((value - MOTORS_PWM_MIN) / MOTORS_PWM_STEP)
 
 // Motors IDs define
 #define MOTOR_M1  0

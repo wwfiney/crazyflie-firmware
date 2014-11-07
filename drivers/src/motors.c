@@ -154,7 +154,11 @@ bool motorsTest(void)
 void motorsSetRatio(int id, uint16_t ratio)
 {
 	//ratio is percent 0-100
-	uint16_t value = ((MOTORS_PWM_PERIOD+1) / 100) * ratio;
+	uint16_t value;
+	uint32_t percent;
+
+	percent = ratio * 100 / UINT16_MAX;
+	value = MOTORS_PWM_RATIO2VALUE(percent);
 
   switch(id)
   {
@@ -175,20 +179,22 @@ void motorsSetRatio(int id, uint16_t ratio)
 
 int motorsGetRatio(int id)
 {
-	uint16_t ratio = (MOTORS_PWM_PERIOD+1) / 100;
+	uint16_t value;
   switch(id)
   {
     case MOTOR_M1:
-      return TIM_GetCapture4(MOTORS_GPIO_TIM_M1_2) / ratio;
+      value = TIM_GetCapture4(MOTORS_GPIO_TIM_M1_2);
     case MOTOR_M2:
-      return TIM_GetCapture3(MOTORS_GPIO_TIM_M1_2) / ratio;
+      value = TIM_GetCapture3(MOTORS_GPIO_TIM_M1_2);
     case MOTOR_M3:
-      return TIM_GetCapture4(MOTORS_GPIO_TIM_M3_4) / ratio;
+      value = TIM_GetCapture4(MOTORS_GPIO_TIM_M3_4);
     case MOTOR_M4:
-      return TIM_GetCapture3(MOTORS_GPIO_TIM_M3_4) / ratio;
+      value = TIM_GetCapture3(MOTORS_GPIO_TIM_M3_4);
+	default:
+		return -1;
   }
 
-  return -1;
+  return MOTORS_PWM_VALUE2RATIO(value);
 }
 
 #ifdef MOTOR_RAMPUP_TEST
