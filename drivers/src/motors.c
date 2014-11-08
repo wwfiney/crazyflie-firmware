@@ -47,7 +47,7 @@
 #define MOTORS_GPIO_TIM_M3_4        TIM4
 #define MOTORS_GPIO_TIM_M3_4_DBG    DBGMCU_TIM4_STOP
 
-#define MOTORS_GPIO_PERIF         (RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
+#define MOTORS_GPIO_PERIF         RCC_APB2Periph_GPIOB
 #define MOTORS_GPIO_PORT          GPIOB
 #define MOTORS_GPIO_PORT_EXT          GPIOA
 #define MOTORS_GPIO_M1            GPIO_Pin_1 // T3_CH4 PB1
@@ -78,6 +78,7 @@ void motorsInit()
 
   //Enable gpio and the timer
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | MOTORS_GPIO_PERIF, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
   RCC_APB1PeriphClockCmd(MOTORS_GPIO_TIM_PERIF | MOTORS_GPIO_TIM_M3_4_PERIF, ENABLE);
   // Configure the GPIO for the timer output
   GPIO_InitStructure.GPIO_Pin = (MOTORS_GPIO_M1 |
@@ -86,14 +87,16 @@ void motorsInit()
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(MOTORS_GPIO_PORT, &GPIO_InitStructure);
 
+//	GPIO_PinRemapConfig(MOTORS_REMAP , ENABLE);
+
+#if 1
   GPIO_InitStructure.GPIO_Pin = (MOTORS_GPIO_M2 |
                                  MOTORS_GPIO_M3);
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(MOTORS_GPIO_PORT_EXT, &GPIO_InitStructure);
-
-//	GPIO_PinRemapConfig(MOTORS_REMAP , ENABLE);
-
+#endif
+#if 1
   //Timer configuration
   TIM_TimeBaseStructure.TIM_Period = MOTORS_PWM_PERIOD;
   TIM_TimeBaseStructure.TIM_Prescaler = MOTORS_PWM_PRESCALE;
@@ -139,7 +142,7 @@ void motorsInit()
   // Halt timer during debug halt.
   DBGMCU_Config(MOTORS_GPIO_TIM_M1_2_DBG, ENABLE);
   DBGMCU_Config(MOTORS_GPIO_TIM_M3_4_DBG, ENABLE);
-  
+  #endif
   isInit = true;
 }
 

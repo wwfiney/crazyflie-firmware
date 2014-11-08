@@ -354,22 +354,28 @@ static void stabilizerAltHoldUpdate(void)
     altHoldPIDVal = 0.0;
   }
 }
-
+#define QUAD_FORMATION_X
 static void distributePower(const uint16_t thrust, const int16_t roll,
                             const int16_t pitch, const int16_t yaw)
 {
 #ifdef QUAD_FORMATION_X
-  roll = roll >> 1;
-  pitch = pitch >> 1;
-  motorPowerM1 = limitThrust(thrust - roll + pitch + yaw);
-  motorPowerM2 = limitThrust(thrust - roll - pitch - yaw);
-  motorPowerM3 =  limitThrust(thrust + roll - pitch + yaw);
-  motorPowerM4 =  limitThrust(thrust + roll + pitch - yaw);
+	int16_t roll_new = (roll >> 1);
+	int16_t pitch_new = (pitch >> 1);
+  motorPowerM1 = limitThrust(thrust - roll_new + pitch_new + yaw);
+  motorPowerM2 = limitThrust(thrust - roll_new - pitch_new - yaw);
+  motorPowerM3 =  limitThrust(thrust + roll_new - pitch_new + yaw);
+  motorPowerM4 =  limitThrust(thrust + roll_new + pitch_new - yaw);
 #else // QUAD_FORMATION_NORMAL
+#if 0
   motorPowerM1 = limitThrust(thrust + pitch + yaw);
   motorPowerM2 = limitThrust(thrust - roll - yaw);
   motorPowerM3 =  limitThrust(thrust - pitch + yaw);
   motorPowerM4 =  limitThrust(thrust + roll - yaw);
+#endif  
+	motorPowerM1 = limitThrust(thrust);
+  motorPowerM2 = limitThrust(thrust);
+  motorPowerM3 =  limitThrust(thrust);
+  motorPowerM4 =  limitThrust(thrust);
 #endif
 
   motorsSetRatio(MOTOR_M1, motorPowerM1);
