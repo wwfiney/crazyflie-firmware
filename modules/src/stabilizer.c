@@ -42,6 +42,7 @@
 #include "ledseq.h"
 #include "param.h"
 #include "ms5611.h"
+#include "debug.h"
 
 #undef max
 #define max(a,b) ((a) > (b) ? (a) : (b))
@@ -177,6 +178,7 @@ static void stabilizerTask(void* param)
   uint32_t attitudeCounter = 0;
   uint32_t altHoldCounter = 0;
   uint32_t lastWakeTime;
+	uint32_t print_temp = 0;
 
   vTaskSetApplicationTaskTag(0, (void*)TASK_STABILIZER_ID_NBR);
 

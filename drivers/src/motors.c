@@ -47,12 +47,13 @@
 #define MOTORS_GPIO_TIM_M3_4        TIM4
 #define MOTORS_GPIO_TIM_M3_4_DBG    DBGMCU_TIM4_STOP
 
-#define MOTORS_GPIO_PERIF         RCC_APB2Periph_GPIOB
+#define MOTORS_GPIO_PERIF         (RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
 #define MOTORS_GPIO_PORT          GPIOB
-#define MOTORS_GPIO_M1            GPIO_Pin_1 // T3_CH4
-#define MOTORS_GPIO_M2            GPIO_Pin_0 // T3_CH3
-#define MOTORS_GPIO_M3            GPIO_Pin_9 // T4_CH4
-#define MOTORS_GPIO_M4            GPIO_Pin_8 // T4_CH3
+#define MOTORS_GPIO_PORT_EXT          GPIOA
+#define MOTORS_GPIO_M1            GPIO_Pin_1 // T3_CH4 PB1
+#define MOTORS_GPIO_M2            GPIO_Pin_6 // T3_CH1 PA6
+#define MOTORS_GPIO_M3            GPIO_Pin_7 // T3_CH2 PA7
+#define MOTORS_GPIO_M4            GPIO_Pin_8 // T4_CH3 PB8
 
 /* Utils Conversion macro */
 //#define C_BITS_TO_16(X) ((X)<<(16-MOTORS_PWM_BITS))
@@ -66,6 +67,7 @@ static bool isInit = false;
 //Initialization. Will set all motors ratio to 0%
 void motorsInit()
 {
+//	int i;
   if (isInit)
     return;
 
@@ -79,15 +81,18 @@ void motorsInit()
   RCC_APB1PeriphClockCmd(MOTORS_GPIO_TIM_PERIF | MOTORS_GPIO_TIM_M3_4_PERIF, ENABLE);
   // Configure the GPIO for the timer output
   GPIO_InitStructure.GPIO_Pin = (MOTORS_GPIO_M1 |
-                                 MOTORS_GPIO_M2 |
-                                 MOTORS_GPIO_M3 |
                                  MOTORS_GPIO_M4);
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(MOTORS_GPIO_PORT, &GPIO_InitStructure);
 
-  //Remap M2-4
-  GPIO_PinRemapConfig(MOTORS_REMAP , ENABLE);
+  GPIO_InitStructure.GPIO_Pin = (MOTORS_GPIO_M2 |
+                                 MOTORS_GPIO_M3);
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init(MOTORS_GPIO_PORT_EXT, &GPIO_InitStructure);
+
+//	GPIO_PinRemapConfig(MOTORS_REMAP , ENABLE);
 
   //Timer configuration
   TIM_TimeBaseStructure.TIM_Period = MOTORS_PWM_PERIOD;
@@ -111,15 +116,20 @@ void motorsInit()
   TIM_OC3Init(MOTORS_GPIO_TIM_M3_4, &TIM_OCInitStructure);
   TIM_OC3PreloadConfig(MOTORS_GPIO_TIM_M3_4, TIM_OCPreload_Enable);
 
-  TIM_OC4Init(MOTORS_GPIO_TIM_M3_4, &TIM_OCInitStructure);
-  TIM_OC4PreloadConfig(MOTORS_GPIO_TIM_M3_4, TIM_OCPreload_Enable);
+  TIM_OC1Init(MOTORS_GPIO_TIM_M1_2, &TIM_OCInitStructure);
+  TIM_OC1PreloadConfig(MOTORS_GPIO_TIM_M1_2, TIM_OCPreload_Enable);
 
-  TIM_OC3Init(MOTORS_GPIO_TIM_M1_2, &TIM_OCInitStructure);
-  TIM_OC3PreloadConfig(MOTORS_GPIO_TIM_M1_2, TIM_OCPreload_Enable);
+  TIM_OC2Init(MOTORS_GPIO_TIM_M1_2, &TIM_OCInitStructure);
+  TIM_OC2PreloadConfig(MOTORS_GPIO_TIM_M1_2, TIM_OCPreload_Enable);
 
   TIM_OC4Init(MOTORS_GPIO_TIM_M1_2, &TIM_OCInitStructure);
   TIM_OC4PreloadConfig(MOTORS_GPIO_TIM_M1_2, TIM_OCPreload_Enable);
 
+	//set PWM to 0
+//  for (i = 0; i < sizeof(MOTORS) / sizeof(*MOTORS); i++)
+//  {
+//    motorsSetRatio(MOTORS[i], 0);
+//  }
   //Enable the timer
   TIM_Cmd(MOTORS_GPIO_TIM_M1_2, ENABLE);
   TIM_Cmd(MOTORS_GPIO_TIM_M3_4, ENABLE);
@@ -147,6 +157,8 @@ bool motorsTest(void)
   }
 #endif
 
+	//motorsSetRatio(MOTOR_M4, 60000);
+
   return isInit;
 }
 
@@ -166,10 +178,10 @@ void motorsSetRatio(int id, uint16_t ratio)
       TIM_SetCompare4(MOTORS_GPIO_TIM_M1_2, value);//C_16_TO_BITS(ratio));
       break;
     case MOTOR_M2:
-      TIM_SetCompare3(MOTORS_GPIO_TIM_M1_2, value);//C_16_TO_BITS(ratio));
+      TIM_SetCompare1(MOTORS_GPIO_TIM_M1_2, value);//C_16_TO_BITS(ratio));
       break;
     case MOTOR_M3:
-      TIM_SetCompare4(MOTORS_GPIO_TIM_M3_4, value);//C_16_TO_BITS(ratio));
+      TIM_SetCompare2(MOTORS_GPIO_TIM_M1_2, value);//C_16_TO_BITS(ratio));
       break;
     case MOTOR_M4:
       TIM_SetCompare3(MOTORS_GPIO_TIM_M3_4, value);//C_16_TO_BITS(ratio));
@@ -185,9 +197,9 @@ int motorsGetRatio(int id)
     case MOTOR_M1:
       value = TIM_GetCapture4(MOTORS_GPIO_TIM_M1_2);
     case MOTOR_M2:
-      value = TIM_GetCapture3(MOTORS_GPIO_TIM_M1_2);
+      value = TIM_GetCapture1(MOTORS_GPIO_TIM_M1_2);
     case MOTOR_M3:
-      value = TIM_GetCapture4(MOTORS_GPIO_TIM_M3_4);
+      value = TIM_GetCapture2(MOTORS_GPIO_TIM_M1_2);
     case MOTOR_M4:
       value = TIM_GetCapture3(MOTORS_GPIO_TIM_M3_4);
 	default:

@@ -1,0 +1,6 @@
+*bin/
+cflie.bin
+cflie.elf
+cflie.map
+version.c
+cflie.hex
